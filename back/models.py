@@ -19,7 +19,7 @@ class Targets(models.Model):
 	active = models.BooleanField(default = True)
 
 	def __str__(self):
-		return(f'{self.killer} - {self.target} - {self.done} - {self.active}')
+		return(f'{self.killer.fio} - {self.target.fio} - {self.done} - {self.active}')
 
 class InGameStatus(models.Model):
 	is_game = models.BooleanField(default = False)

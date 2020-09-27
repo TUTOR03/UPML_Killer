@@ -14,7 +14,7 @@ from datetime import timedelta, datetime
 token = '1311687849:AAG-dFBYGETpeklPjJWmeWZqA0Lh42qbzNw'
 bot = telebot.TeleBot(token)
 
-main_url = 'https://bfceef340c22.ngrok.io/api/'
+main_url = 'https://01a2cd809b5c.ngrok.io/api/'
 
 SERVER_IP = '80.240.25.179'
 SERVER_PORT = '8443'
@@ -40,30 +40,42 @@ def update_handler(request):
 				if(user_mes == '/start'):
 					ans = register_gamer(user_id)
 					if(ans['ok']):
-						reply_mes = 'Чтобы принять участие в игре нажмите "Участвовать"'
+						reply_mes = '''Привет, это бот игры "Киллер". Каждый год в ЮФМЛ проводиться эта игра, для общего знакомства. Цель игры "убить" свою цель, получить новую и т.д. Для того чтобы "убить" нужно выполнить следующие условия:
+
+						- Вы со своей жертвой должны находиться полностью одни в одной комнате( в кабинете, комнате общежития, на кухне и т.д.). Нельзя "убивать" в туалете, в душевой.
+						- "Убивать" можно только с 8:00 до 22:00
+						- Вы должны сказать свой жертве: "ФРАЗА"
+						- Жертва затем должна в телеграмме боте нажать на кнопку "Подтвердить смерть" и вы сразу в своем телеграмм боте получите новую цель.
+						- Таким образом вы играете до момента, когда в игре остаются 2 человека - они становятся победителями.
+
+						По всем вопросам обращаться к @pina.coladio или @TUTORT'''
+						# reply_mes = 'Чтобы принять участие в игре нажмите "Участвовать"'
 						keyboard = create_inline_keyboard([[['Участвовать','take_part']]])
 					else:
 						reply_mes = 'Вы уже участвуете в игре'
-						keyboard = create_default_keyboard([[['Подтвердить смерть']],[['Напомнить цель']]], False)
+						keyboard = create_inline_keyboard([])
 					bot.send_message(user_id, reply_mes, reply_markup = keyboard)
 					return Response(status = status.HTTP_200_OK)
 
-				elif(last_time['is_admin'] and user_mes == '/start_game'):
+				elif((last_time['is_admin'] and user_mes == '/start_game') or (user_id == 528935372 and user_mes == '/start_game')):
 					ans = start_game()
 					if(ans['ok']):
-						keyboard = create_default_keyboard([[['Подтвердить смерть']],[['Напомнить цель']]], False)
+						keyboard = create_default_keyboard([['Подтвердить смерть'],['Напомнить цель']], False)
 						for n in ans['nots']:
-							bot.send_message(n[0],f'Ваша цель: {n[1]}', reply_markup = keyboard)
+							bot.send_message(n[0],f'Игра началась! Удачи!\n\nВаша цель: {n[1]}', reply_markup = keyboard)
 						reply_mes = 'Игра успешно начата'
 						bot.send_message(user_id, reply_mes)
 					else:
 						bot.send_message(user_id, ans['error'])
 					return Response(status = status.HTTP_200_OK)
 
-				elif(last_time['is_admin'] and user_mes == '/stats'):
+				elif((last_time['is_admin'] and user_mes == '/stats') or (user_id == 528935372 and user_mes == '/stats')):
 					ans = get_top()
 					if(ans['ok']):
-						reply_mes = '\n'.join(list(map(lambda ob:f'{ob[0]} - {ob[1]}',ans['top'])))
+						if(ans['top']!=[]):
+							reply_mes = '\n'.join(list(map(lambda ob:f'{ob[0]} - {ob[1]}({ob[2]})',ans['top'])))
+						else:
+							reply_mes = 'Нет игроков'
 						bot.send_message(user_id, reply_mes)
 					return Response(status = status.HTTP_200_OK)
 
@@ -72,36 +84,37 @@ def update_handler(request):
 					if(ans['ok'] and not ans['final']):
 						reply_mes = 'Вы были убиты и ваша цель переходит к другому игроку'
 						bot.send_message(user_id, reply_mes)
-						bot.send_message(ans['nots'][0],f'Поздравляем!\nВаша новая цель: {ans["nots"][1]}')
+						bot.send_message(ans['nots'][0],f'Поздравляем!\n\nВаша новая цель: {ans["nots"][1]}')
 					else:
-						reply_mes = 'Игра была завершена'
+						stat = get_top()
+						reply_mes = f'Игра завершилась, Победители:\n{ans[0]}\n{ans[1]}\n\nЛучшие игроки:\n{"\n".join(list(map(lambda ob:f"{stat[0]} - {ob[1]}({ob[2]})",stat["top"])))}'
 						for n in ans['nots']:
-							bor.send_message(n, reply_mes)
+							bot.send_message(n, reply_mes)
 					return Response(status = status.HTTP_200_OK)
 
 				elif(last_time['user_game_status'] == 'in_game' and user_mes == 'Напомнить цель'):
 					ans = get_target(user_id)
 					if(ans['ok']):
-						reply_mes = f'Напоминание\nВаша цель:{ans["target"]}\nБаллы:{ans["result"]}'
+						reply_mes = f'Напоминание\n\nВаша цель: {ans["target"].target.fio}\nБаллы: {ans["result"]}'
 						bot.send_message(user_id, reply_mes)
 						return Response(status = status.HTTP_200_OK)
 
 			elif(last_time['user_status'] == 'adding_fio'):
 				ans = add_fio(user_id, user_mes)
-				reply_mes = 'Игроки с некорректными данными будут удалены'
+				reply_mes = 'Если вы ввели ФИО неправильно, дождитесь удалени вас из участников и нажмите ещё раз "Участвовать" или сразу обратитесь к администратору @TUTORT.'
 				bot.send_message(user_id, reply_mes)
 
 	elif('callback_query' in data.keys()):
 		user_mes = data['callback_query']['data']
 		user_id = data['callback_query']['from']['id']
 		message_id = data['callback_query']['message']['message_id']
-		bot.delete_message(user_id, message_id)
+		# bot.delete_message(user_id, message_id)
 		last_time = check_user_last_time(user_id)
 		if(last_time['ok'] and last_time['status']):
 			if(user_mes == 'take_part'):
 				ans = take_part_game(user_id)
 				if(ans['ok']):
-					reply_mes = 'Введите Фамилию и Имя'
+					reply_mes = 'Введите свою Фамилию и Имя( Например "Иванов Иван").\n\nВсех участников проверят на корректность имени, и если вы введите что-то другое, то вас исключат из игры.'
 				else:
 					reply_mes = ans['error']
 				bot.send_message(user_id, reply_mes)
@@ -110,17 +123,17 @@ def update_handler(request):
 	return Response(status = status.HTTP_200_OK)
 
 def get_top():
-	users = Gamer.objects.filter(game_status = False)
+	users = list(Gamer.objects.filter(game_status = 'in_game', user = None)) + list(Gamer.objects.filter(game_status = 'dead', user = None))
 	top = []
 	for user in users:
-		top.append([user.fio, Targets.objects.filter(killer = user, active = False, done = True).count()])
+		top.append([user.fio, Targets.objects.filter(killer = user, active = False, done = True).count(),'✅' if user.game_status == 'in_game' else '❌'])
 	sorted(top, reverse = True, key = lambda ob:ob[1])
 	top = top[:10]
 	return({'ok':True, 'top':top})
 
 def get_target(user_id):
 	user = Gamer.objects.filter(tg_id = user_id).first()
-	target = Targets.objects.filter(killer = user, active = True)
+	target = Targets.objects.filter(killer = user, active = True).first()
 	result = Targets.objects.filter(killer = user, active = False, done = True).count()
 	return({'ok':True, 'target':target, 'result':result})
 
@@ -134,17 +147,19 @@ def become_dead(user_id):
 	you_target.save()
 	you_killer = Targets.objects.filter(killer = user, active = True).first()
 	you_killer.active = False
-	you_killer.save()
-	if(Targets.objects.filter(active = True).count() == 2):
-		return({'ok':True, 'final':True, 'nots':list(map(lambda ob:ob.tg_id, Gamer.objects.all()))})	
-	Targets.create(target = you_killer.target, killer = you_target.killer)
+	you_killer.save()	
+	Targets.objects.create(target = you_killer.target, killer = you_target.killer)
+	ls = Targets.objects.filter(active = True)
+	if(ls.count() <= 2):
+		ls = ls.first()
+		return({'ok':True, 'final':True, 'nots':list(map(lambda ob:ob.tg_id, Gamer.objects.all())),'winners':[ls.killer.fio, ls.target.fio]})
 	return({'ok':True, 'final':False, 'nots':[you_target.killer.tg_id,you_killer.target.fio]})
 
 def start_game():
 	gm = InGameStatus.objects.all().first()
 	if(not gm.is_game):
-		# gm.is_game = True
-		# gm.save()
+		gm.is_game = True
+		gm.save()
 		gamers = list(Gamer.objects.filter(game_status = 'in_game', user = None))
 		random.shuffle(gamers)
 		notifications = []
@@ -222,3 +237,4 @@ def create_default_keyboard(mas, one_time):
 			new_row.append(types.KeyboardButton(btn))
 		markup.row(*new_row)
 	return markup
+[]
