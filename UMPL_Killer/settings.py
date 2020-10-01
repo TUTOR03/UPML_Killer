@@ -23,9 +23,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'agt1!%sw_ygb=j+%vt5*hep6cpe@@&e6!%-+kl!5y#89d$u#s$'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['0.0.0.0','01a2cd809b5c.ngrok.io','127.0.0.1']
+ALLOWED_HOSTS = ['80.240.25.179']
 
 
 # Application definition
@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'sslserver',
     'back'
 ]
 
@@ -77,8 +78,12 @@ WSGI_APPLICATION = 'UMPL_Killer.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'django_upml_killer',
+        'USER': 'postgres',
+        'PASSWORD': 'zo.h0906023',
+        'HOST': 'db',
+        'PORT': '5432',
     }
 }
 
@@ -115,8 +120,8 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR,'static')
