@@ -11,16 +11,13 @@ from telebot import types
 import time
 from datetime import timedelta, datetime
 
-token = '1311687849:AAG-dFBYGETpeklPjJWmeWZqA0Lh42qbzNw'
+token = ''
 bot = telebot.TeleBot(token)
 
-main_url = 'https://01a2cd809b5c.ngrok.io/api/'
-
-SERVER_IP = '80.240.25.179'
-SERVER_PORT = '443'
+SERVER_IP = ''
+SERVER_PORT = ''
 bot.remove_webhook()
 time.sleep(1.5)
-#bot.set_webhook(url = main_url, allowed_updates=['message', 'callback_query'])
 bot.set_webhook(url = f'https://{SERVER_IP}:{SERVER_PORT}/api/',certificate = open('back/YOURPUBLIC.pem') , allowed_updates=['message','callback_query'])
 print('set_webhook')
 #time.sleep(1.5)
